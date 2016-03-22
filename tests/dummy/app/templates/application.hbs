@@ -7,7 +7,7 @@
     <section class="vertical-demo">
       <h3>Vertical</h3>
 
-      {{#sortable-group tagName="ol" onChange="update" as |group|}}
+      {{#sortable-group tagName="ol" keyboardActivated=true onChange="update" as |group|}}
         {{#each model.items as |item|}}
           {{#sortable-item tagName="li" model=item group=group handle=".handle"}}
             {{item}}

@@ -1,11 +1,12 @@
 import Ember from 'ember';
 import layout from '../templates/components/sortable-group';
 import computed from 'ember-new-computed';
+import { EKMixin, keyUp } from 'ember-keyboard';
 const { A, Component, get, set, run } = Ember;
 const a = A;
 const NO_MODEL = {};
 
-export default Component.extend({
+export default Component.extend(EKMixin, {
   layout: layout,
 
   /**
@@ -153,5 +154,61 @@ export default Component.extend({
     } else {
       this.sendAction('onChange', itemModels, draggedModel);
     }
+  },
+
+  highlightedIndex: null,
+
+  nextItem(shift) {
+    let highlightedIndex = this.get('highlightedIndex');
+    let items = [].concat(this.get('sortedItems'));
+    let total = items.length;
+    let arrayMaxIndex = total - 1;
+    let newIndex;
+
+    // start fresh
+    if(highlightedIndex == null) {
+      newIndex = shift > 0 ? 0 : arrayMaxIndex;
+    } // Use highlighted
+    else {
+      // next
+      if(shift > 0) {
+        newIndex = (highlightedIndex == arrayMaxIndex) ? 0 : highlightedIndex + 1;
+      } // prev
+      else {
+        newIndex = highlightedIndex == 0 ? arrayMaxIndex : highlightedIndex - 1;
+      }
+
+      // change dragging
+      let currentItem = items[highlightedIndex];
+      currentItem.set('isDropping', false);
+    }
+
+    // set the new highlighted
+    let newItem = items[newIndex];
+    newItem.set('isDropping', true);
+    this.set('highlightedIndex', newIndex);
+  },
+
+  up: Ember.on(keyUp('ArrowUp'), function() {
+    this.nextItem(-1);
+  }),
+
+  down: Ember.on(keyUp('ArrowDown'), function() {
+    this.nextItem(1);
+  }),
+
+  //TODO
+  shiftItem(item, shift) {
+    let items = [].concat(this.get('sortedItems'));
+    let currentIndex = items.indexOf(item);
+    let newIndex = currentIndex + shift;
+
+    items.splice(currentIndex, 1);
+    items.splice(newIndex, 0, item);
+
+    let models = items.map(i => i.model);
+
+    this.sendAction('onChange', models, item);
   }
+
 });
