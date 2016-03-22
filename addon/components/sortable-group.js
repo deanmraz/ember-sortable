@@ -156,52 +156,80 @@ export default Component.extend(EKMixin, {
     }
   },
 
-  highlightedIndex: null,
-
-  nextItem(shift) {
-    let highlightedIndex = this.get('highlightedIndex');
-    let items = [].concat(this.get('sortedItems'));
-    let total = items.length;
-    let arrayMaxIndex = total - 1;
-    let newIndex;
-
-    // start fresh
-    if(highlightedIndex == null) {
-      newIndex = shift > 0 ? 0 : arrayMaxIndex;
-    } // Use highlighted
-    else {
-      // next
-      if(shift > 0) {
-        newIndex = (highlightedIndex == arrayMaxIndex) ? 0 : highlightedIndex + 1;
-      } // prev
-      else {
-        newIndex = highlightedIndex == 0 ? arrayMaxIndex : highlightedIndex - 1;
-      }
-
-      // change dragging
-      let currentItem = items[highlightedIndex];
-      currentItem.set('isDropping', false);
-    }
-
-    // set the new highlighted
-    let newItem = items[newIndex];
-    newItem.set('isDropping', true);
-    this.set('highlightedIndex', newIndex);
-  },
+  currentIndex: null,
+  moving: false,
 
   up: Ember.on(keyUp('ArrowUp'), function() {
-    this.nextItem(-1);
+    this.handleShift(-1);
   }),
 
   down: Ember.on(keyUp('ArrowDown'), function() {
-    this.nextItem(1);
+    this.handleShift(1);
   }),
 
-  //TODO
-  shiftItem(item, shift) {
+  m: Ember.on(keyUp('m'), function() {
+    let moving = this.get('moving');
+    let currentIndex = this.get('currentIndex');
     let items = [].concat(this.get('sortedItems'));
-    let currentIndex = items.indexOf(item);
-    let newIndex = currentIndex + shift;
+
+    if(moving) {
+      items[currentIndex].set('isDragging', false);
+      items[currentIndex].set('isDropping', true);
+    } else {
+      items[currentIndex].set('isDragging', true);
+      items[currentIndex].set('isDropping', false);
+    }
+
+    this.toggleProperty('moving');
+  }),
+
+  handleShift(shift) {
+    let moving = this.get('moving');
+    if(moving) this.shiftItem(shift);
+    else this.nextItem(shift);
+  },
+
+  newIndex(shift) {
+    let currentIndex = this.get('currentIndex');
+    let total = this.get('items').length;
+    let arrayMaxIndex = total - 1;
+    let newIndex;
+    // next
+    if(shift > 0) {
+      newIndex = (currentIndex == arrayMaxIndex) ? 0 : currentIndex + 1;
+    } // prev
+    else {
+      newIndex = currentIndex == 0 ? arrayMaxIndex : currentIndex - 1;
+    }
+    return newIndex;
+  },
+
+  nextItem(shift) {
+    let currentIndex = this.get('currentIndex');
+    let items = [].concat(this.get('sortedItems'));
+    let newIndex;
+
+    // start fresh
+    if(currentIndex == null) {
+      newIndex = shift > 0 ? 0 : arrayMaxIndex;
+    } // Use highlighted
+    else {
+      newIndex = this.newIndex(shift);
+      // remove old highlighted
+      items[currentIndex].set('isDropping', false);
+    }
+    // set the new highlighted
+    items[newIndex].set('isDropping', true);
+    this.set('currentIndex', newIndex);
+  },
+
+  shiftItem(shift) {
+    let items = [].concat(this.get('items'));
+    let currentIndex = this.get('currentIndex');
+    let item = items[currentIndex]; // TODO this is not returning the right item
+    let newIndex = this.newIndex(shift);
+
+    debugger;
 
     items.splice(currentIndex, 1);
     items.splice(newIndex, 0, item);
@@ -209,6 +237,10 @@ export default Component.extend(EKMixin, {
     let models = items.map(i => i.model);
 
     this.sendAction('onChange', models, item);
+
+    this.set('currentIndex', newIndex);
+
+    debugger;
   }
 
 });
