@@ -175,6 +175,7 @@ export default Component.extend(EKMixin, {
     if(moving) {
       items[currentIndex].set('isDragging', false);
       items[currentIndex].set('isDropping', true);
+      this.commit();
     } else {
       items[currentIndex].set('isDragging', true);
       items[currentIndex].set('isDropping', false);
@@ -196,10 +197,10 @@ export default Component.extend(EKMixin, {
     let newIndex;
     // next
     if(shift > 0) {
-      newIndex = (currentIndex == arrayMaxIndex) ? 0 : currentIndex + 1;
+      newIndex = (currentIndex == arrayMaxIndex) ? currentIndex : currentIndex + 1;
     } // prev
     else {
-      newIndex = currentIndex == 0 ? arrayMaxIndex : currentIndex - 1;
+      newIndex = currentIndex == 0 ? currentIndex : currentIndex - 1;
     }
     return newIndex;
   },
@@ -224,23 +225,24 @@ export default Component.extend(EKMixin, {
   },
 
   shiftItem(shift) {
-    let items = [].concat(this.get('items'));
+    // get indexes
     let currentIndex = this.get('currentIndex');
-    let item = items[currentIndex]; // TODO this is not returning the right item
     let newIndex = this.newIndex(shift);
 
-    debugger;
+    //get items
+    let items = this.get('sortedItems');
+    let current = items[currentIndex];
+    let next = items[newIndex];
+    
+    // get positions
+    let currentPosition = current.get('y');
+    let nextPosition = next.get('y');
 
-    items.splice(currentIndex, 1);
-    items.splice(newIndex, 0, item);
-
-    let models = items.map(i => i.model);
-
-    this.sendAction('onChange', models, item);
+    current.set('y', nextPosition + shift);
+    next.set('y', currentPosition);
+    this.update();
 
     this.set('currentIndex', newIndex);
-
-    debugger;
   }
 
 });
