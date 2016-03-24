@@ -1,12 +1,12 @@
 import Ember from 'ember';
 import layout from '../templates/components/sortable-group';
 import computed from 'ember-new-computed';
-import { EKMixin, keyUp } from 'ember-keyboard';
+import SortableKeyboard from '../mixins/sortable-keyboard';
 const { A, Component, get, set, run } = Ember;
 const a = A;
 const NO_MODEL = {};
 
-export default Component.extend(EKMixin, {
+export default Component.extend(SortableKeyboard, {
   layout: layout,
 
   /**
@@ -154,95 +154,5 @@ export default Component.extend(EKMixin, {
     } else {
       this.sendAction('onChange', itemModels, draggedModel);
     }
-  },
-
-  currentIndex: null,
-  moving: false,
-
-  up: Ember.on(keyUp('ArrowUp'), function() {
-    this.handleShift(-1);
-  }),
-
-  down: Ember.on(keyUp('ArrowDown'), function() {
-    this.handleShift(1);
-  }),
-
-  m: Ember.on(keyUp('m'), function() {
-    let moving = this.get('moving');
-    let currentIndex = this.get('currentIndex');
-    let items = [].concat(this.get('sortedItems'));
-
-    if(moving) {
-      items[currentIndex].set('isDragging', false);
-      items[currentIndex].set('isDropping', true);
-      this.commit();
-    } else {
-      items[currentIndex].set('isDragging', true);
-      items[currentIndex].set('isDropping', false);
-    }
-
-    this.toggleProperty('moving');
-  }),
-
-  handleShift(shift) {
-    let moving = this.get('moving');
-    if(moving) this.shiftItem(shift);
-    else this.nextItem(shift);
-  },
-
-  newIndex(shift) {
-    let currentIndex = this.get('currentIndex');
-    let total = this.get('items').length;
-    let arrayMaxIndex = total - 1;
-    let newIndex;
-    // next
-    if(shift > 0) {
-      newIndex = (currentIndex == arrayMaxIndex) ? currentIndex : currentIndex + 1;
-    } // prev
-    else {
-      newIndex = currentIndex == 0 ? currentIndex : currentIndex - 1;
-    }
-    return newIndex;
-  },
-
-  nextItem(shift) {
-    let currentIndex = this.get('currentIndex');
-    let items = [].concat(this.get('sortedItems'));
-    let newIndex;
-
-    // start fresh
-    if(currentIndex == null) {
-      newIndex = shift > 0 ? 0 : arrayMaxIndex;
-    } // Use highlighted
-    else {
-      newIndex = this.newIndex(shift);
-      // remove old highlighted
-      items[currentIndex].set('isDropping', false);
-    }
-    // set the new highlighted
-    items[newIndex].set('isDropping', true);
-    this.set('currentIndex', newIndex);
-  },
-
-  shiftItem(shift) {
-    // get indexes
-    let currentIndex = this.get('currentIndex');
-    let newIndex = this.newIndex(shift);
-
-    //get items
-    let items = this.get('sortedItems');
-    let current = items[currentIndex];
-    let next = items[newIndex];
-    
-    // get positions
-    let currentPosition = current.get('y');
-    let nextPosition = next.get('y');
-
-    current.set('y', nextPosition + shift);
-    next.set('y', currentPosition);
-    this.update();
-
-    this.set('currentIndex', newIndex);
   }
-
 });
